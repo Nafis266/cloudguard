@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>CloudGuard</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family:
+                Inter,
+                system-ui,
+                sans-serif;
+
+            background: #0b0f14;
+            color: #e6edf3;
+        }
+
+        header {
+            height: 72px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 32px;
+
+            border-bottom:
+                1px solid #222a33;
+
+            background: #10161d;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #8b949e;
+            font-size: 13px;
+        }
+
+        main {
+            padding: 30px;
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        button {
+            border: none;
+            padding: 11px 18px;
+
+            border-radius: 7px;
+
+            background: #238636;
+            color: white;
+
+            cursor: pointer;
+
+            font-weight: 600;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .cards {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 16px;
+
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: #111820;
+
+            border:
+                1px solid #242d38;
+
+            border-radius: 10px;
+
+            padding: 20px;
+        }
+
+        .card-title {
+            color: #8b949e;
+            font-size: 13px;
+        }
+
+        .card-value {
+            font-size: 30px;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .panel {
+            background: #111820;
+
+            border:
+                1px solid #242d38;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 18px 20px;
+
+            border-bottom:
+                1px solid #242d38;
+
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 14px 18px;
+
+            text-align: left;
+
+            border-bottom:
+                1px solid #202832;
+
+            font-size: 14px;
+        }
+
+        th {
+            color: #8b949e;
+            font-weight: 500;
+        }
+
+        .high {
+            color: #ff7b72;
+            font-weight: 700;
+        }
+
+        .low {
+            color: #3fb950;
+            font-weight: 700;
+        }
+
+        .unknown {
+            color: #d29922;
+            font-weight: 700;
+        }
+
+        .empty {
+            padding: 30px;
+            color: #8b949e;
+            text-align: center;
+        }
+
+        @media (max-width: 900px) {
+
+            .cards {
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+
+    <div>
+
+        <div class="logo">
+            CloudGuard
+        </div>
+
+        <div class="subtitle">
+            AWS Configuration Drift Detection
+        </div>
+
+    </div>
+
+    <div id="status">
+        Ready
+    </div>
+
+</header>
+
+
+<main>
+
+    <div class="top">
+
+        <div>
+
+            <h2>
+                Infrastructure Overview
+            </h2>
+
+            <div class="subtitle">
+                Desired state vs actual AWS state
+            </div>
+
+        </div>
+
+        <button onclick="runScan()">
+            Run Scan
+        </button>
+
+    </div>
+
+
+    <div class="cards">
+
+        <div class="card">
+
+            <div class="card-title">
+                S3 Buckets
+            </div>
+
+            <div
+                class="card-value"
+                id="s3Count"
+            >
+                -
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                EC2 Instances
+            </div>
+
+            <div
+                class="card-value"
+                id="ec2Count"
+            >
+                -
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                Security Groups
+            </div>
+
+            <div
+                class="card-value"
+                id="sgCount"
+            >
+                -
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                Configuration Drifts
+            </div>
+
+            <div
+                class="card-value"
+                id="driftCount"
+            >
+                -
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <div class="panel-header">
+            Detected Configuration Drift
+        </div>
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Resource
+                    </th>
+
+                    <th>
+                        ID
+                    </th>
+
+                    <th>
+                        Issue
+                    </th>
+
+                    <th>
+                        Expected
+                    </th>
+
+                    <th>
+                        Actual
+                    </th>
+
+                    <th>
+                        Risk
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="driftTable">
+
+                <tr>
+                    <td
+                        colspan="6"
+                        class="empty"
+                    >
+                        Run a scan to begin.
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
+
+
+<script>
+
+async function runScan() {
+
+    const status =
+        document.getElementById(
+            "status"
+        );
+
+    status.innerText =
+        "Scanning AWS...";
+
+
+    try {
+
+        const response =
+            await fetch(
+                "http://localhost:5000/api/scan"
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Scan failed"
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        updateDashboard(data);
+
+
+        status.innerText =
+            "Scan complete";
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        status.innerText =
+            "Scan failed";
+
+        alert(
+            "Unable to connect to CloudGuard API."
+        );
+
+    }
+
+}
+
+
+function updateDashboard(data) {
+
+    const scan =
+        data.scan;
+
+
+    document.getElementById(
+        "s3Count"
+    ).innerText =
+        (scan.s3 || []).length;
+
+
+    document.getElementById(
+        "ec2Count"
+    ).innerText =
+        (scan.ec2 || []).length;
+
+
+    document.getElementById(
+        "sgCount"
+    ).innerText =
+        (scan.security_groups || []).length;
+
+
+    document.getElementById(
+        "driftCount"
+    ).innerText =
+        data.drift_count;
+
+
+    const table =
+        document.getElementById(
+            "driftTable"
+        );
+
+
+    table.innerHTML = "";
+
+
+    if (
+        !data.drifts ||
+        data.drifts.length === 0
+    ) {
+
+        table.innerHTML = `
+            <tr>
+                <td
+                    colspan="6"
+                    class="empty"
+                >
+                    No configuration drift detected.
+                </td>
+            </tr>
+        `;
+
+        return;
+
+    }
+
+
+    for (
+        const drift of data.drifts
+    ) {
+
+        const row =
+            document.createElement(
+                "tr"
+            );
+
+
+        const risk =
+            drift.risk || "UNKNOWN";
+
+
+        row.innerHTML = `
+
+            <td>
+                ${escapeHtml(
+                    drift.resource_type
+                )}
+            </td>
+
+            <td>
+                ${escapeHtml(
+                    drift.resource_id
+                )}
+            </td>
+
+            <td>
+                ${escapeHtml(
+                    drift.issue
+                )}
+            </td>
+
+            <td>
+                ${escapeHtml(
+                    String(drift.expected)
+                )}
+            </td>
+
+            <td>
+                ${escapeHtml(
+                    String(drift.actual)
+                )}
+            </td>
+
+            <td class="${risk.toLowerCase()}">
+                ${escapeHtml(risk)}
+            </td>
+
+        `;
+
+
+        table.appendChild(row);
+
+    }
+
+}
+
+
+function escapeHtml(value) {
+
+    return String(value)
+
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
+
+}
+
+</script>
+
+</body>
+
+</html>

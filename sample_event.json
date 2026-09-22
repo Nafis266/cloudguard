@@ -1,0 +1,16 @@
+{
+    "version": "0",
+    "id": "cloudguard-test-event",
+    "detail-type": "AWS API Call via CloudTrail",
+    "source": "aws.s3",
+    "account": "123456789012",
+    "time": "2026-09-18T12:00:00Z",
+    "region": "ap-south-1",
+    "detail": {
+        "eventSource": "s3.amazonaws.com",
+        "eventName": "PutBucketPublicAccessBlock",
+        "requestParameters": {
+            "bucketName": "cloudguard-test-bucket"
+        }
+    }
+}

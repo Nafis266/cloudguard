@@ -1,0 +1,13 @@
+{
+    "s3": {
+        "block_public_access": true,
+        "versioning": true,
+        "encryption": true
+    },
+    "ec2": {
+        "required_tags": [
+            "Name",
+            "Environment"
+        ]
+    }
+}
