@@ -7,6 +7,8 @@ from flask import Flask, jsonify, request
 from scanner import AWSScanner
 from drift_detector import DriftDetector
 from remediation import Remediator
+from rewind import safeRemediator
+from rewind_api import create_rewind_blueprint
 
 
 app = Flask(__name__)
@@ -35,6 +37,7 @@ MODEL_PATH = os.environ.get(
     "../ml/model.pkl"
 )
 
+app.register_blueprint(create_rewind_blueprint(REGION)) 
 
 scanner = AWSScanner(
     region=REGION
@@ -46,9 +49,7 @@ detector = DriftDetector(
 )
 
 
-# ---------------------------------------------------------
 # Health
-# ---------------------------------------------------------
 
 @app.route("/api/health")
 def health():
@@ -62,9 +63,7 @@ def health():
     })
 
 
-# ---------------------------------------------------------
 # Scan
-# ---------------------------------------------------------
 
 @app.route("/api/scan", methods=["GET"])
 def scan():
@@ -97,9 +96,7 @@ def scan():
     })
 
 
-# ---------------------------------------------------------
 # Remediation
-# ---------------------------------------------------------
 
 @app.route(
     "/api/remediate",
@@ -133,7 +130,7 @@ def remediate():
         True
     )
 
-    remediator = Remediator(
+    remediator = SafeRemediator(
         region=REGION,
         dry_run=dry_run
     )
@@ -150,9 +147,7 @@ def remediate():
     return jsonify(result)
 
 
-# ---------------------------------------------------------
 # Auto remediation
-# ---------------------------------------------------------
 
 @app.route(
     "/api/scan-and-remediate",
@@ -175,7 +170,7 @@ def scan_and_remediate():
         scan_data
     )
 
-    remediator = Remediator(
+    remediator = SafeRemediator(
         region=REGION,
         dry_run=dry_run
     )

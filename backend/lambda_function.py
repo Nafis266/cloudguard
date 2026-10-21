@@ -5,6 +5,9 @@ import logging
 from scanner import AWSScanner
 from drift_detector import DriftDetector
 from remediation import Remediator
+from rewind import SafeRemediator
+
+
 
 
 logger = logging.getLogger()
@@ -33,6 +36,7 @@ AUTO_REMEDIATE = os.environ.get(
     "AUTO_REMEDIATE",
     "false"
 ).lower() == "true"
+
 
 
 def lambda_handler(
@@ -68,7 +72,7 @@ def lambda_handler(
 
     if AUTO_REMEDIATE:
 
-        remediator = Remediator(
+        remediator = SafeRemediator(
             region=REGION,
             dry_run=False
         )

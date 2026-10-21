@@ -3,14 +3,23 @@ import joblib
 from sklearn.ensemble import IsolationForest
 
 
-# ---------------------------------------------------------
-# Feature format
+# Feature format:
 #
 # [resource_type,
 #  change_type,
 #  port,
 #  public_access]
-# ---------------------------------------------------------
+#
+# Resource types:
+# 1 = S3
+# 2 = EC2
+#
+# Change types:
+# 0 = none
+# 1 = configuration
+# 2 = security
+# 3 = tag
+
 
 training_data = [
 
@@ -24,13 +33,7 @@ training_data = [
     [2, 3, 0, 0],
     [2, 1, 0, 0],
 
-    # Normal security group
-    [3, 1, 22, 0],
-    [3, 1, 3389, 0],
-
-    # Unusual configurations
-    [3, 2, 22, 1],
-    [3, 2, 3389, 1],
+    # Unusual S3 configuration
     [1, 2, 0, 1]
 ]
 
@@ -42,9 +45,7 @@ model = IsolationForest(
 )
 
 
-model.fit(
-    training_data
-)
+model.fit(training_data)
 
 
 joblib.dump(

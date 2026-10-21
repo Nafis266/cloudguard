@@ -5,11 +5,7 @@ import joblib
 
 class DriftDetector:
 
-    def __init__(
-        self,
-        baseline_path="../config/baseline.json",
-        model_path="../ml/model.pkl"
-    ):
+    def __init__(self,baseline_path="../config/baseline.json",model_path="../ml/model.pkl"):
 
         self.baseline = self._load_baseline(
             baseline_path
@@ -25,8 +21,6 @@ class DriftDetector:
             except Exception:
                 self.model = None
 
-    # Load baseline
-
     def _load_baseline(self, path):
 
         try:
@@ -38,24 +32,14 @@ class DriftDetector:
 
             return {
                 "s3": {},
-                "security_groups": {},
                 "ec2": {}
             }
 
-    # ML features
-
-    def _features(
-        self,
-        resource,
-        change_type,
-        port=0,
-        public_access=0
-    ):
+    def _features(self,resource,change_type,port=0,public_access=0):
 
         resource_types = {
             "s3": 1,
-            "ec2": 2,
-            "security_group": 3
+            "ec2": 2
         }
 
         change_types = {
@@ -66,58 +50,30 @@ class DriftDetector:
         }
 
         return [[
-            resource_types.get(
-                resource,
-                0
-            ),
-
-            change_types.get(
-                change_type,
-                0
-            ),
-
+            resource_types.get(resource, 0),
+            change_types.get(change_type, 0),
             port,
-
             public_access
         ]]
 
-    # ML risk
-
-    def calculate_risk(
-        self,
-        resource,
-        change_type,
-        port=0,
-        public_access=0
-    ):
+    def calculate_risk(self,resource,change_type,port=0,public_access=0):
 
         if self.model is None:
+
             return {
                 "risk": "UNKNOWN",
                 "score": 0
             }
 
-        features = self._features(
-            resource,
-            change_type,
-            port,
-            public_access
-        )
+        features = self._features(resource,change_type,port,public_access)
 
-        prediction = self.model.predict(
-            features
-        )[0]
+        prediction = self.model.predict(features)[0]
 
-        score = self.model.decision_function(
-            features
-        )[0]
+        score = self.model.decision_function(features)[0]
 
         if prediction == -1:
-
             risk = "HIGH"
-
         else:
-
             risk = "LOW"
 
         return {
@@ -125,36 +81,24 @@ class DriftDetector:
             "score": float(score)
         }
 
-    # S3 drift
-
     def check_s3(self, bucket):
 
         drifts = []
 
-        baseline = self.baseline.get(
-            "s3",
-            {}
-        )
+        baseline = self.baseline.get("s3",{})
 
-        if baseline.get(
-            "block_public_access"
-        ):
+        if baseline.get("block_public_access"):
 
-            if not bucket.get(
-                "block_public_access",
-                False
-            ):
+            if not bucket.get("block_public_access",False):
 
-                risk = self.calculate_risk(
-                    "s3",
-                    "security",
-                    public_access=1
-                )
+                risk = self.calculate_risk("s3","security",public_access=1)
 
                 drifts.append({
                     "resource_type": "s3",
                     "resource_id": bucket["resource_id"],
-                    "issue": "S3 public access protection disabled",
+                    "issue": (
+                        "S3 public access protection disabled"
+                    ),
                     "expected": True,
                     "actual": False,
                     **risk
@@ -204,8 +148,6 @@ class DriftDetector:
 
         return drifts
 
-    # EC2 tag drift
-
     def check_ec2(self, instance):
 
         drifts = []
@@ -250,8 +192,6 @@ class DriftDetector:
 
         return drifts
 
-    # Full analysis
-
     def analyze(self, scan):
 
         all_drifts = []
@@ -262,20 +202,9 @@ class DriftDetector:
         ):
 
             if "error" not in bucket:
+
                 all_drifts.extend(
                     self.check_s3(bucket)
-                )
-
-        for group in scan.get(
-            "security_groups",
-            []
-        ):
-
-            if "error" not in group:
-                all_drifts.extend(
-                    self.check_security_group(
-                        group
-                    )
                 )
 
         for instance in scan.get(
@@ -284,10 +213,9 @@ class DriftDetector:
         ):
 
             if "error" not in instance:
+
                 all_drifts.extend(
-                    self.check_ec2(
-                        instance
-                    )
+                    self.check_ec2(instance)
                 )
 
         return all_drifts
