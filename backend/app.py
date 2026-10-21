@@ -3,15 +3,17 @@ import logging
 from datetime import datetime, timezone
 
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 from scanner import AWSScanner
 from drift_detector import DriftDetector
 from remediation import Remediator
-from rewind import safeRemediator
+from rewind import SafeRemediator
 from rewind_api import create_rewind_blueprint
 
 
 app = Flask(__name__)
+CORS(app)
 
 logging.basicConfig(
     level=logging.INFO
